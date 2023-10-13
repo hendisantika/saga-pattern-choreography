@@ -1,9 +1,15 @@
 package com.hendisantika.order.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hendisantika.order.dto.OrderEvent;
+import com.hendisantika.order.entity.Order;
 import com.hendisantika.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 /**
  * Created by IntelliJ IDEA.
@@ -22,4 +28,20 @@ import org.springframework.stereotype.Component;
 public class ReverseOrder {
 
     private final OrderRepository orderRepository;
+
+    @KafkaListener(topics = "reversed-orders", groupId = "orders-group")
+    public void reverseOrder(String event) {
+        try {
+            OrderEvent orderEvent = new ObjectMapper().readValue(event, OrderEvent.class);
+
+            Optional<Order> order = this.orderRepository.findById(orderEvent.getOrder().getOrderId());
+
+            order.ifPresent(o -> {
+                o.setStatus("FAILED");
+                this.orderRepository.save(o);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

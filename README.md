@@ -90,3 +90,72 @@ tasks.
 Let us implement SAGA using Choreography in this example.
 
 It is simpler and neat compared to Orchestration.
+
+### Implementation:
+
+Let’s consider the example of a ecommerce application.
+
+A customer places an order and the order gets shipped.
+
+This is the business use case.
+
+Let’s say there are four different microservices to take care of this flow.
+
+An order microservice which handles the customer orders.
+
+A payment microservice which handles payments for the orders.
+
+An inventory microservice which updates the inventory once orders are placed.
+
+A shipping microservice which deals with delivering the orders.
+
+![initial design](img/img1.png "initial design")
+
+Note that in real case , separating these functionalities into four different apps may not be a good design . If your
+user base is small you can do all the above in a single monolith instead of four different microservices which is going
+to increase your network calls and infrastructure cost. Also handling transactions in a monolith is way more easier.
+
+For this example though , we will go with this design to understand SAGA design pattern.
+
+Now let’s consider the below functions in each microservice when a customer places an order:
+
+1. createOrder() – Oder microservice
+2. processPayment() – Payment microservice
+3. updateInventory() – Inventory microservice
+4. shipOrder() – Shipping Microservice
+
+When a customer places an order and createOrder() , processPayment() methods succeed and updateInventory() method fails
+then the system will have a wrong inventory information. And the customer won’t get her order shipped!
+
+So all these tasks have to be part of a single transaction.
+
+You can use SAGA design pattern to implement distributed transaction.
+
+To resolve the above issue , you can rollback the entire transaction using backward recovery.
+
+You can have a compensation task for each of the tasks above.
+
+Here are the compensating tasks
+
+1. reverseOrder() – Order microservice
+2. reversePayment() – Payment microservice
+3. reverseInventory() – Inventory microservice
+   Here is the updated flow:
+
+![updated design](img/img2.png "updated design")
+
+Now if updateInventory() method fails, then you call reversePayment() and then reverseOrder() and the order will be
+rolled back!
+
+### Advantages:
+
+If you want to execute a series of tasks spanning different microservices SAGA helps you achieve it.
+SAGA lets you do a transaction in an asynchronous way , this can improve application performance
+
+### Disadvantages:
+
+SAGA makes your code more complex to implement and understand
+SAGA only ensures eventual consistency of data so if your transaction has tightly coupled tasks then it is not an option
+
+###Conclusion:
+We saw how SAGA can help in implementing distributed transactions with sample code.

@@ -1,17 +1,19 @@
 package com.hendisantika.inventory.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hendisantika.inventory.dto.CustomerOrder;
 import com.hendisantika.inventory.dto.InventoryEvent;
 import com.hendisantika.inventory.dto.PaymentEvent;
+import com.hendisantika.inventory.dto.Stock;
 import com.hendisantika.inventory.entity.Inventory;
 import com.hendisantika.inventory.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -73,6 +75,23 @@ public class InventoryController {
             pe.setType("PAYMENT_REVERSED");
             this.kafkaPaymentTemplate.send("reversed-payments", pe);
 
+        }
+    }
+
+    @PostMapping("/inventory")
+    public void addInventory(@RequestBody Stock stock) {
+        Iterable<Inventory> items = this.inventoryRepository.findByItem(stock.getItem());
+
+        if (items.iterator().hasNext()) {
+            items.forEach(i -> {
+                i.setQuantity(stock.getQuantity() + i.getQuantity());
+                this.inventoryRepository.save(i);
+            });
+        } else {
+            Inventory i = new Inventory();
+            i.setItem(stock.getItem());
+            i.setQuantity(stock.getQuantity());
+            this.inventoryRepository.save(i);
         }
     }
 }

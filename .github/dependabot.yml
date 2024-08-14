@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: "/inventory"
+    schedule:
+      interval: daily
+      time: '21:00'
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: maven
+    directory: "/payment"
+    schedule:
+      interval: daily
+      time: '21:00'
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: maven
+    directory: "/order"
+    schedule:
+      interval: daily
+      time: '21:00'
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: maven
+    directory: "/shipment"
+    schedule:
+      interval: daily
+      time: '21:00'
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 10

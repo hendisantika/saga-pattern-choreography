@@ -1,33 +1,52 @@
 version: 2
 updates:
+  # Maven dependencies for every microservice, handled in a single entry so that
+  # a shared upgrade (e.g. Spring Boot parent) arrives as ONE pull request.
   - package-ecosystem: maven
-    directory: "/inventory"
+    directories:
+      - "/order"
+      - "/payment"
+      - "/inventory"
+      - "/shipment"
     schedule:
-      interval: daily
-      time: '21:00'
+      interval: weekly
+      day: monday
+      time: "06:00"
       timezone: Asia/Jakarta
     open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    labels:
+      - dependencies
+      - java
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot*"
+          - "org.springframework*"
+      maven-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+        exclude-patterns:
+          - "org.springframework*"
 
-  - package-ecosystem: maven
-    directory: "/payment"
+  # Keep GitHub Actions used by the CI workflow up to date.
+  - package-ecosystem: github-actions
+    directory: "/"
     schedule:
-      interval: daily
-      time: '21:00'
+      interval: weekly
+      day: monday
+      time: "06:00"
       timezone: Asia/Jakarta
-    open-pull-requests-limit: 10
-
-  - package-ecosystem: maven
-    directory: "/order"
-    schedule:
-      interval: daily
-      time: '21:00'
-      timezone: Asia/Jakarta
-    open-pull-requests-limit: 10
-
-  - package-ecosystem: maven
-    directory: "/shipment"
-    schedule:
-      interval: daily
-      time: '21:00'
-      timezone: Asia/Jakarta
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci(deps)"
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      github-actions:
+        patterns:
+          - "*"

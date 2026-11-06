@@ -1,8 +1,7 @@
 package com.hendisantika.shipment.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.hendisantika.shipment.dto.CustomerOrder;
 import com.hendisantika.shipment.dto.InventoryEvent;
 import com.hendisantika.shipment.entity.Shipment;
@@ -35,7 +34,7 @@ public class ShipmentController {
     private final KafkaTemplate<String, InventoryEvent> kafkaTemplate;
 
     @KafkaListener(topics = "new-inventory", groupId = "inventory-group")
-    public void shipOrder(String event) throws JsonProcessingException {
+    public void shipOrder(String event) throws JacksonException {
         Shipment shipment = new Shipment();
         InventoryEvent inventoryEvent = new ObjectMapper().readValue(event, InventoryEvent.class);
         CustomerOrder order = inventoryEvent.getOrder();

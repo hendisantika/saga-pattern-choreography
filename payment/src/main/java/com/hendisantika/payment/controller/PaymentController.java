@@ -1,8 +1,7 @@
 package com.hendisantika.payment.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.hendisantika.payment.dto.CustomerOrder;
 import com.hendisantika.payment.dto.OrderEvent;
 import com.hendisantika.payment.dto.PaymentEvent;
@@ -37,7 +36,7 @@ public class PaymentController {
     private final KafkaTemplate<String, OrderEvent> kafkaOrderTemplate;
 
     @KafkaListener(topics = "new-orders", groupId = "orders-group")
-    public void processPayment(String event) throws JsonProcessingException {
+    public void processPayment(String event) throws JacksonException {
         log.info("Recieved event" + event);
         OrderEvent orderEvent = new ObjectMapper().readValue(event, OrderEvent.class);
 

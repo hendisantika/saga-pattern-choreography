@@ -1,6 +1,6 @@
 package com.hendisantika.payment.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.hendisantika.payment.dto.CustomerOrder;
 import com.hendisantika.payment.dto.OrderEvent;
 import com.hendisantika.payment.dto.PaymentEvent;

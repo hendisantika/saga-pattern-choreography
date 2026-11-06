@@ -1,7 +1,7 @@
 package com.hendisantika.inventory.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.hendisantika.inventory.dto.CustomerOrder;
 import com.hendisantika.inventory.dto.InventoryEvent;
 import com.hendisantika.inventory.dto.PaymentEvent;
@@ -39,7 +39,7 @@ public class InventoryController {
     private final KafkaTemplate<String, PaymentEvent> kafkaPaymentTemplate;
 
     @KafkaListener(topics = "new-payments", groupId = "payments-group")
-    public void updateInventory(String paymentEvent) throws JsonProcessingException {
+    public void updateInventory(String paymentEvent) throws JacksonException {
 
         InventoryEvent event = new InventoryEvent();
 

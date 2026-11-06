@@ -1,5 +1,103 @@
 # saga-pattern-choreography
+
+[![Java CI with Maven](https://github.com/hendisantika/saga-pattern-choreography/actions/workflows/maven.yml/badge.svg)](https://github.com/hendisantika/saga-pattern-choreography/actions/workflows/maven.yml)
+![Java](https://img.shields.io/badge/Java-25-orange?logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F?logo=springboot)
+![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-event%20bus-231F20?logo=apachekafka)
+
 Saga Pattern Choreography in Microservice Using Spring Boot
+
+## Tech Stack
+
+| Component     | Version / Tool                                                   |
+|---------------|------------------------------------------------------------------|
+| Java          | **JDK 25** (Temurin in CI)                                       |
+| Framework     | Spring Boot 4.1.x (Spring Web MVC, Spring Data JPA)              |
+| Messaging     | Apache Kafka via `spring-boot-starter-kafka`                     |
+| JSON          | Jackson 3 (`tools.jackson`) + `JacksonJsonSerializer` for Kafka   |
+| Database      | H2 in-memory (one database per service)                          |
+| Build         | Maven (wrapper included in every service)                        |
+| Boilerplate   | Lombok (configured as an explicit annotation processor)         |
+
+## Services
+
+| Service     | Port | H2 database   | Consumes (topic)                     | Produces (topic)                                 |
+|-------------|------|---------------|--------------------------------------|--------------------------------------------------|
+| `order`     | 8080 | `ordersdb`    | `reversed-orders`                    | `new-orders`                                     |
+| `payment`   | 8081 | `paymentsdb`  | `new-orders`, `reversed-payments`    | `new-payments`, `reversed-orders`                |
+| `inventory` | 8082 | `inventorydb` | `new-payments`                       | `new-inventory`, `reversed-payments`             |
+| `shipment`  | 8083 | `shipmentdb`  | `new-inventory`                      | `reversed-inventory`                             |
+
+> Note: `reversed-inventory` is published by the shipment service, but no service currently consumes it
+> (`reverseInventory()` is left as an exercise).
+
+REST endpoints:
+
+* `POST http://localhost:8080/orders` – place an order (starts the saga)
+* `POST http://localhost:8082/inventory` – add stock for an item
+
+## Getting Started
+
+### Prerequisites
+
+* JDK 25
+* A running Kafka broker on `localhost:9092`, e.g. with Docker:
+
+```shell
+docker run -d --name kafka -p 9092:9092 apache/kafka:latest
+```
+
+### Build
+
+Each service is an independent Maven project:
+
+```shell
+for s in order payment inventory shipment; do (cd $s && ./mvnw -B verify); done
+```
+
+### Run
+
+Start every service in its own terminal:
+
+```shell
+cd order && ./mvnw spring-boot:run
+cd payment && ./mvnw spring-boot:run
+cd inventory && ./mvnw spring-boot:run
+cd shipment && ./mvnw spring-boot:run
+```
+
+### Try it
+
+```shell
+# 1. add stock
+curl -X POST http://localhost:8082/inventory \
+  -H 'Content-Type: application/json' \
+  -d '{"item":"books","quantity":200}'
+
+# 2. place an order (happy path -> shipped)
+curl -X POST http://localhost:8080/orders \
+  -H 'Content-Type: application/json' \
+  -d '{"item":"books","quantity":10,"amount":100,"paymentMode":"credit card","address":"Bandung"}'
+
+# 3. place an order for an item without stock -> payment & order get compensated (FAILED)
+curl -X POST http://localhost:8080/orders \
+  -H 'Content-Type: application/json' \
+  -d '{"item":"pens","quantity":10,"amount":100,"paymentMode":"credit card","address":"Bandung"}'
+```
+
+Inspect each service's data in the H2 console, e.g. `http://localhost:8080/h2-console`
+(JDBC URL `jdbc:h2:mem:ordersdb`).
+
+## CI & Dependency Updates
+
+* **GitHub Actions** – [`.github/workflows/maven.yml`](.github/workflows/maven.yml) builds and tests every service on
+  JDK 25 using a matrix job (one job per service) on each push / pull request to `main`.
+* **Dependabot** – [`.github/dependabot.yml`](.github/dependabot.yml) checks weekly (Monday 06:00 Asia/Jakarta):
+    * Maven dependencies of all four services in a single entry, so shared bumps (e.g. Spring Boot parent) arrive as
+      one grouped pull request (`spring-boot` and `maven-minor-and-patch` groups).
+    * GitHub Actions used by the workflow (grouped into one pull request).
+
+---
 
 ### How to implement SAGA design pattern in Spring Boot?
 
@@ -56,8 +154,8 @@ So if there are four tasks T1, T2 , T3 and T4,
 
 Then you have three corresponding compensating tasks C1,C2,C3.
 
-If , for example , T1 and T2 succeeds and T3 fails , then you run C2 and C1 to rollback the effects of T1 and T2 in *
-*Last In First Out order**.
+If , for example , T1 and T2 succeeds and T3 fails , then you run C2 and C1 to rollback the effects of T1 and T2 in
+**Last In First Out order**.
 
 So the sequence of the transaction goes like this : T1 -> T2 -> T3 (failed) -> C2 -> C1.
 
@@ -77,7 +175,8 @@ It can be implemented in two ways:
 
 * Choreography
 * Orchestration
-  Choreography means the tasks execute independently. Once one task is completed , it invokes the next tasks in the
+
+Choreography means the tasks execute independently. Once one task is completed , it invokes the next tasks in the
   sequence. In case if the next task fails then it invokes the compensating tasks for the previous tasks.
 
 Orchestration means the tasks are invoked by another parent task.
@@ -140,7 +239,8 @@ Here are the compensating tasks
 1. reverseOrder() – Order microservice
 2. reversePayment() – Payment microservice
 3. reverseInventory() – Inventory microservice
-   Here is the updated flow:
+
+Here is the updated flow:
 
 ![updated design](img/img2.png "updated design")
 
@@ -157,5 +257,6 @@ SAGA lets you do a transaction in an asynchronous way , this can improve applica
 SAGA makes your code more complex to implement and understand
 SAGA only ensures eventual consistency of data so if your transaction has tightly coupled tasks then it is not an option
 
-###Conclusion:
+### Conclusion:
+
 We saw how SAGA can help in implementing distributed transactions with sample code.
